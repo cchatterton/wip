@@ -111,6 +111,9 @@ struct WIPRootView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(tab == .addNotes || tab == .notes
+                        ? WIPStyle.readingSurface(colorScheme)
+                        : WIPStyle.background)
         }
         .background(WIPStyle.background)
         .overlay {
