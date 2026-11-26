@@ -9,6 +9,7 @@ struct TasksSidebar: View {
     @State private var newTask = ""
     @State private var draggingID: UUID?
     @State private var editing: TaskItem?
+    @FocusState private var newTaskFocused: Bool
 
     private var visibleTasks: [TaskItem] {
         if let organisationID { return store.tasks(forOrganisation: organisationID) }
@@ -35,6 +36,7 @@ struct TasksSidebar: View {
                 TextField("New task", text: $newTask)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
+                    .focused($newTaskFocused)
                     .onSubmit(addTask)
                     .padding(.leading, 10)
                     .disabled(organisationID == nil && contactID == nil)
@@ -43,6 +45,7 @@ struct TasksSidebar: View {
                     Image(systemName: "plus")
                         .font(.system(size: 15, weight: .medium))
                         .frame(width: 34, height: 34)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(organisationID == nil && contactID == nil)
@@ -51,6 +54,10 @@ struct TasksSidebar: View {
             .frame(height: 34)
             .background(RoundedRectangle(cornerRadius: 8).fill(WIPStyle.raisedSurface(colorScheme)))
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(WIPStyle.divider))
+            .contentShape(RoundedRectangle(cornerRadius: 8))
+            .onTapGesture {
+                if organisationID != nil || contactID != nil { newTaskFocused = true }
+            }
         }
         .padding(.horizontal, 20)
         .padding(.top, 28)

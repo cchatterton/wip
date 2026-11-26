@@ -9,6 +9,8 @@ struct TasksBoardView: View {
     @State private var draggingID: UUID?
     @State private var editing: TaskItem?
     @State private var query = ""
+    @FocusState private var searchFocused: Bool
+    @FocusState private var focusedNewTaskLane: TaskLane?
 
     private var searchText: String {
         query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -22,12 +24,14 @@ struct TasksBoardView: View {
                 TextField("Filter tasks…", text: $query)
                     .textFieldStyle(.plain)
                     .font(WIPStyle.bodyFont)
+                    .focused($searchFocused)
                 if !query.isEmpty {
                     Button { query = "" } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.secondary)
                             .frame(width: 24, height: 24)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Clear search")
@@ -37,6 +41,8 @@ struct TasksBoardView: View {
             .frame(height: 78)
             .frame(maxWidth: .infinity)
             .background(WIPStyle.readingSurface(colorScheme))
+            .contentShape(Rectangle())
+            .onTapGesture { searchFocused = true }
 
             Rectangle().fill(WIPStyle.divider).frame(height: 1)
 
@@ -171,6 +177,7 @@ struct TasksBoardView: View {
             ))
             .textFieldStyle(.plain)
             .font(.system(size: 13))
+            .focused($focusedNewTaskLane, equals: lane)
             .onSubmit { addTask(to: lane) }
             .padding(.leading, 10)
 
@@ -179,6 +186,7 @@ struct TasksBoardView: View {
                 Image(systemName: "plus")
                     .font(.system(size: 15, weight: .medium))
                     .frame(width: 34, height: 34)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Add task to \(lane.rawValue)")
@@ -186,6 +194,8 @@ struct TasksBoardView: View {
         .frame(height: 34)
         .background(RoundedRectangle(cornerRadius: 8).fill(WIPStyle.raisedSurface(colorScheme)))
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(WIPStyle.divider))
+        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .onTapGesture { focusedNewTaskLane = lane }
     }
 
     private func addTask(to lane: TaskLane) {

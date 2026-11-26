@@ -170,6 +170,8 @@ struct WIPRootView: View {
                                 .fill(tab == item ? Color.primary : Color.clear)
                                 .frame(width: 28, height: 2)
                         }
+                        .frame(height: 64)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.primary)
@@ -259,6 +261,7 @@ struct SoftField: ViewModifier {
             .frame(height: 34)
             .background(RoundedRectangle(cornerRadius: 8).fill(WIPStyle.raisedSurface(colorScheme)))
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(WIPStyle.divider))
+            .contentShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 

@@ -28,6 +28,9 @@ struct EntityWorkspaceView: View {
     @State private var editingNote: Note?
     @State private var displayedNoteCount = 10
     @State private var showCopiedAlert = false
+    @FocusState private var sidebarSearchFocused: Bool
+    @FocusState private var feedSearchFocused: Bool
+    @FocusState private var newNameFocused: Bool
 
     private var selectedOrganisation: Organisation? {
         store.data.organisations.first { $0.id == selectedID }
@@ -116,12 +119,14 @@ struct EntityWorkspaceView: View {
                 TextField(kind == .organisation ? "Filter organisations…" : "Filter contacts…", text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
+                    .focused($sidebarSearchFocused)
                 if !query.isEmpty {
                     Button { query = "" } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.secondary)
                             .frame(width: 20, height: 20)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Clear search")
@@ -131,6 +136,8 @@ struct EntityWorkspaceView: View {
             .frame(height: 35)
             .background(RoundedRectangle(cornerRadius: 8).fill(WIPStyle.raisedSurface(colorScheme)))
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(WIPStyle.divider))
+            .contentShape(RoundedRectangle(cornerRadius: 8))
+            .onTapGesture { sidebarSearchFocused = true }
             .padding(.bottom, 14)
 
             ScrollView {
@@ -152,6 +159,7 @@ struct EntityWorkspaceView: View {
                 TextField(kind == .organisation ? "New organisation" : "New contact", text: $newName)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
+                    .focused($newNameFocused)
                     .onSubmit(addEntity)
                     .padding(.leading, 10)
                 Rectangle().fill(WIPStyle.divider).frame(width: 1, height: 34)
@@ -159,6 +167,7 @@ struct EntityWorkspaceView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 15, weight: .medium))
                         .frame(width: 34, height: 34)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(kind == .organisation ? "Add organisation" : "Add contact")
@@ -166,6 +175,8 @@ struct EntityWorkspaceView: View {
             .frame(height: 34)
             .background(RoundedRectangle(cornerRadius: 8).fill(WIPStyle.raisedSurface(colorScheme)))
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(WIPStyle.divider))
+            .contentShape(RoundedRectangle(cornerRadius: 8))
+            .onTapGesture { newNameFocused = true }
         }
         .padding(.horizontal, 20)
         .padding(.top, 28)
@@ -196,12 +207,14 @@ struct EntityWorkspaceView: View {
                 TextField("Filter notes…", text: $feedQuery)
                     .textFieldStyle(.plain)
                     .font(WIPStyle.bodyFont)
+                    .focused($feedSearchFocused)
                 if !feedQuery.isEmpty {
                     Button { feedQuery = "" } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.secondary)
                             .frame(width: 24, height: 24)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Clear note filter")
@@ -211,6 +224,8 @@ struct EntityWorkspaceView: View {
             .frame(height: 78)
             .frame(maxWidth: .infinity)
             .background(WIPStyle.sidebarSurface(colorScheme))
+            .contentShape(Rectangle())
+            .onTapGesture { feedSearchFocused = true }
 
             Rectangle().fill(WIPStyle.divider).frame(height: 1)
 

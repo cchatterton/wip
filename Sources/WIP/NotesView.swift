@@ -89,6 +89,8 @@ struct NotesView: View {
                 .frame(height: 44)
                 .background(RoundedRectangle(cornerRadius: 10).fill(WIPStyle.raisedSurface(colorScheme)))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(WIPStyle.divider))
+                .contentShape(RoundedRectangle(cornerRadius: 10))
+                .onTapGesture { searchFocused = true }
                 .onChange(of: query) { _ in
                     selected.removeAll()
                     displayedCount = 10
@@ -114,6 +116,7 @@ struct NotesView: View {
                                         .padding(.vertical, 6)
                                         .background(Capsule().fill(WIPStyle.raisedSurface(colorScheme)))
                                         .overlay(Capsule().stroke(WIPStyle.divider))
+                                        .contentShape(Capsule())
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -318,6 +321,7 @@ struct NoteEditorSheet: View {
                 .font(WIPStyle.bodyFont)
                 .padding(10)
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(WIPStyle.divider))
+                .contentShape(RoundedRectangle(cornerRadius: 8))
                 .frame(minHeight: 230)
             if let errorMessage {
                 Text(errorMessage).font(.system(size: 13)).foregroundStyle(.red)

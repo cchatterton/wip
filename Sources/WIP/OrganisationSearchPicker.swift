@@ -58,6 +58,8 @@ struct OrganisationSearchPicker: View {
                                 Image(systemName: "xmark")
                                     .font(.system(size: 11, weight: .semibold))
                                     .foregroundStyle(.secondary)
+                                    .frame(width: 20, height: 20)
+                                    .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Clear search")
@@ -65,6 +67,8 @@ struct OrganisationSearchPicker: View {
                     }
                     .padding(10)
                     .background(RoundedRectangle(cornerRadius: 7).fill(WIPStyle.raisedSurface(colorScheme)))
+                    .contentShape(RoundedRectangle(cornerRadius: 7))
+                    .onTapGesture { searchFocused = true }
 
                     ScrollView {
                         LazyVStack(spacing: 2) {

@@ -54,20 +54,25 @@ struct AddNotesView: View {
                                 .frame(width: 98, height: 28)
                                 .padding(.horizontal, 8)
                                 .background(RoundedRectangle(cornerRadius: 6).stroke(WIPStyle.divider))
+                                .contentShape(RoundedRectangle(cornerRadius: 6))
                         }
                         .font(.system(size: 13))
 
                         Spacer()
-                        Button("Open text file…") { showImporter = true }
+                        Button { showImporter = true } label: {
+                            Text("Open text file…")
+                                .frame(minHeight: 30)
+                                .contentShape(Rectangle())
+                        }
                             .buttonStyle(.plain)
                             .foregroundStyle(.secondary)
                             .font(.system(size: 13))
                         HStack(spacing: 8) {
                             Button { showJSONImporter = true } label: {
-                                Text("Import JSON").frame(width: 100)
+                                Text("Import JSON").frame(width: 100).contentShape(Rectangle())
                             }
                             Button(action: save) {
-                                Text("Save notes").frame(width: 100)
+                                Text("Save notes").frame(width: 100).contentShape(Rectangle())
                             }
                         }
                         .buttonStyle(.bordered)
