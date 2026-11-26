@@ -292,11 +292,21 @@ struct NotesView: View {
 struct NoteEditorSheet: View {
     @EnvironmentObject private var store: WIPStore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    @AppStorage("highlightHex") private var highlightHex = WIPStyle.defaultHighlightHex
     let note: Note
     @State private var noteText: String
     @State private var date: Date
     @State private var organisationID: UUID?
     @State private var errorMessage: String?
+    @State private var findText = ""
+    @State private var replacementText = ""
+    @FocusState private var findFocused: Bool
+    @FocusState private var replacementFocused: Bool
+
+    private var hasFindMatch: Bool {
+        !findText.isEmpty && noteText.range(of: findText, options: .caseInsensitive) != nil
+    }
 
     init(note: Note) {
         self.note = note
@@ -317,16 +327,41 @@ struct NoteEditorSheet: View {
                     }
                 }
             }
-            TextEditor(text: $noteText)
-                .font(WIPStyle.bodyFont)
+            HighlightedNoteEditor(
+                text: $noteText,
+                findText: findText,
+                highlightHex: highlightHex,
+                colorScheme: colorScheme
+            )
                 .padding(10)
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(WIPStyle.divider))
                 .contentShape(RoundedRectangle(cornerRadius: 8))
-                .frame(minHeight: 230)
+                .frame(minHeight: 500)
             if let errorMessage {
                 Text(errorMessage).font(.system(size: 13)).foregroundStyle(.red)
             }
-            HStack {
+            HStack(spacing: 8) {
+                TextField("Find", text: $findText)
+                    .focused($findFocused)
+                    .softField()
+                    .frame(width: 112)
+                    .onTapGesture { findFocused = true }
+                TextField("Replace with", text: $replacementText)
+                    .focused($replacementFocused)
+                    .softField()
+                    .frame(width: 112)
+                    .onTapGesture { replacementFocused = true }
+                Button("Update") {
+                    noteText = noteText.replacingOccurrences(
+                        of: findText,
+                        with: replacementText,
+                        options: .caseInsensitive
+                    )
+                    findText = replacementText
+                    replacementText = ""
+                }
+                .disabled(!hasFindMatch)
+                .help("Replace all highlighted matches in this note")
                 Spacer()
                 Button("Cancel") { dismiss() }
                 Button("Save") {

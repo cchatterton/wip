@@ -4,7 +4,7 @@ WIP is a local macOS app for importing client notes, browsing them by organisati
 
 ## Install
 
-Download `WIP-0.2.2-macOS-arm64.zip` from the repository's Releases page, unzip it, and move `WIP.app` to Applications. This build requires an Apple silicon Mac running macOS 13 or newer. The app is ad hoc signed and is not notarised; macOS may require you to control-click the app and choose Open the first time.
+Download `WIP-0.2.3-macOS-arm64.zip` from the repository's Releases page, unzip it, and move `WIP.app` to Applications. This build requires an Apple silicon Mac running macOS 13 or newer. The app is ad hoc signed and is not notarised; macOS may require you to control-click the app and choose Open the first time.
 
 Your notes, organisations, contacts, and tasks are stored only on your Mac at `~/Library/Application Support/WIP/WIP.json`. They are not included in this repository or its releases.
 
