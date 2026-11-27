@@ -15,6 +15,11 @@ struct WIPStoreChecks {
         precondition((try? NoteDateInput.parse("29/2/24")) != nil)
         precondition((try? NoteDateInput.parse("31/2/26")) == nil)
         precondition((try? NoteDateInput.parse("1/2/6")) == nil)
+        let referenceDay = try NoteDateInput.parse("1/3/2026")
+        precondition(NoteDateInput.shiftedText("1/3/26", by: -1, today: referenceDay) == "28/2/2026")
+        precondition(NoteDateInput.shiftedText("28/2/26", by: 1, today: referenceDay) == "1/3/2026")
+        precondition(NoteDateInput.shiftedText("1/3/26", by: 1, today: referenceDay) == nil)
+        precondition(NoteDateInput.shiftedText("bad date", by: -1, today: referenceDay) == nil)
 
         let today = Date()
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!

@@ -12,6 +12,14 @@ struct AddNotesView: View {
     @State private var showJSONImporter = false
     @FocusState private var textFocused: Bool
 
+    private var previousDateText: String? {
+        NoteDateInput.shiftedText(dateText, by: -1, today: store.now)
+    }
+
+    private var nextDateText: String? {
+        NoteDateInput.shiftedText(dateText, by: 1, today: store.now)
+    }
+
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
@@ -55,6 +63,31 @@ struct AddNotesView: View {
                                 .padding(.horizontal, 8)
                                 .background(RoundedRectangle(cornerRadius: 6).stroke(WIPStyle.divider))
                                 .contentShape(RoundedRectangle(cornerRadius: 6))
+                            HStack(spacing: 2) {
+                                Button {
+                                    if let previousDateText { dateText = previousDateText }
+                                } label: {
+                                    Image(systemName: "arrowtriangle.left.fill")
+                                        .frame(width: 18, height: 28)
+                                        .contentShape(Rectangle())
+                                }
+                                .disabled(previousDateText == nil)
+                                .opacity(previousDateText == nil ? 0.5 : 1)
+                                .accessibilityLabel("Previous day")
+
+                                Button {
+                                    if let nextDateText { dateText = nextDateText }
+                                } label: {
+                                    Image(systemName: "arrowtriangle.right.fill")
+                                        .frame(width: 18, height: 28)
+                                        .contentShape(Rectangle())
+                                }
+                                .disabled(nextDateText == nil)
+                                .opacity(nextDateText == nil ? 0.5 : 1)
+                                .accessibilityLabel("Next day")
+                            }
+                            .buttonStyle(.plain)
+                            .font(.system(size: 10))
                         }
                         .font(.system(size: 13))
 

@@ -18,6 +18,16 @@ enum NoteDateInput {
         return "\(parts.day!)/\(parts.month!)/\(parts.year!)"
     }
 
+    static func shiftedText(_ input: String, by days: Int, today: Date = Date()) -> String? {
+        guard let date = try? parse(input),
+              let shifted = calendar.date(byAdding: .day, value: days, to: date),
+              calendar.component(.year, from: shifted) >= 1000 else { return nil }
+        if days > 0 && calendar.startOfDay(for: shifted) > calendar.startOfDay(for: today) {
+            return nil
+        }
+        return text(for: shifted)
+    }
+
     static func parse(_ input: String) throws -> Date {
         let parts = input.split(separator: "/", omittingEmptySubsequences: false)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
