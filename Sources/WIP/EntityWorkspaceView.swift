@@ -28,7 +28,6 @@ struct EntityWorkspaceView: View {
     @State private var editingContact: Contact?
     @State private var editingNote: Note?
     @State private var displayedNoteCount = 10
-    @State private var showCopiedAlert = false
     @FocusState private var sidebarSearchFocused: Bool
     @FocusState private var feedSearchFocused: Bool
     @FocusState private var newNameFocused: Bool
@@ -101,9 +100,6 @@ struct EntityWorkspaceView: View {
         .sheet(item: $editingOrganisation) { OrganisationEditorSheet(organisation: $0) }
         .sheet(item: $editingContact) { ContactEditorSheet(contact: $0) }
         .sheet(item: $editingNote) { NoteEditorSheet(note: $0) }
-        .alert("Feed copied to clipboard.", isPresented: $showCopiedAlert) {
-            Button("OK") { }
-        }
     }
 
     private var sidebar: some View {
@@ -267,9 +263,10 @@ struct EntityWorkspaceView: View {
                            let organisation = store.data.organisations.first(where: { $0.id == organisationID }) {
                             linkedOrganisationMetadata(organisation)
                         }
-                        let related = relatedOrganisations(for: contact)
-                        if !related.isEmpty {
-                            relatedOrganisationsMetadata(related)
+                        let relatedOrganisations = relatedOrganisations(for: contact)
+                        let relatedContacts = relatedContactsInVisibleNotes(excluding: contact)
+                        if !relatedOrganisations.isEmpty || !relatedContacts.isEmpty {
+                            relatedEntitiesMetadata(organisations: relatedOrganisations, contacts: relatedContacts)
                         }
                     }
                     .padding(.bottom, 28)
@@ -326,7 +323,7 @@ struct EntityWorkspaceView: View {
                           let contact = store.data.contacts.first(where: { $0.id == id }) else {
                         return .discarded
                     }
-                    onNavigate(EntityFocus(kind: .contact, id: contact.id, name: contact.name))
+                    navigateToEntity(EntityFocus(kind: .contact, id: contact.id, name: contact.name))
                     return .handled
                 })
         }
@@ -350,7 +347,7 @@ struct EntityWorkspaceView: View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             copyMetadataLabel("Organisation", value: organisation.name)
             Button {
-                onNavigate(EntityFocus(kind: .organisation, id: organisation.id, name: organisation.name))
+                navigateToEntity(EntityFocus(kind: .organisation, id: organisation.id, name: organisation.name))
             } label: {
                 Text(organisation.name)
             }
@@ -360,30 +357,45 @@ struct EntityWorkspaceView: View {
         .lineSpacing(1)
     }
 
-    private func relatedOrganisationsMetadata(_ organisations: [Organisation]) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            copyMetadataLabel("Related", value: organisations.map(\.name).joined(separator: ", "))
-            Text(organisationLinks(organisations))
+    private func relatedEntitiesMetadata(organisations: [Organisation], contacts: [Contact]) -> some View {
+        let names = relatedEntityNames(organisations: organisations, contacts: contacts)
+        return HStack(alignment: .firstTextBaseline, spacing: 12) {
+            copyMetadataLabel("Related", value: names.joined(separator: ", "))
+            Text(relatedEntityLinks(organisations: organisations, contacts: contacts))
                 .environment(\.openURL, OpenURLAction { url in
-                    guard url.scheme == "wip", url.host == "organisation",
-                          let id = UUID(uuidString: url.lastPathComponent),
-                          let organisation = store.data.organisations.first(where: { $0.id == id }) else {
-                        return .discarded
+                    guard url.scheme == "wip",
+                          let id = UUID(uuidString: url.lastPathComponent) else { return .discarded }
+                    if url.host == "organisation",
+                       let organisation = store.data.organisations.first(where: { $0.id == id }) {
+                        navigateToEntity(EntityFocus(kind: .organisation, id: id, name: organisation.name))
+                        return .handled
                     }
-                    onNavigate(EntityFocus(kind: .organisation, id: organisation.id, name: organisation.name))
-                    return .handled
+                    if url.host == "contact",
+                       let contact = store.data.contacts.first(where: { $0.id == id }) {
+                        navigateToEntity(EntityFocus(kind: .contact, id: id, name: contact.name))
+                        return .handled
+                    }
+                    return .discarded
                 })
         }
         .font(.system(size: 14))
         .lineSpacing(1)
     }
 
-    private func organisationLinks(_ organisations: [Organisation]) -> AttributedString {
+    private func relatedEntityNames(organisations: [Organisation], contacts: [Contact]) -> [String] {
+        (organisations.map(\.name) + contacts.map(\.name))
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
+
+    private func relatedEntityLinks(organisations: [Organisation], contacts: [Contact]) -> AttributedString {
+        let entries = (organisations.map { ($0.name, "organisation", $0.id) }
+            + contacts.map { ($0.name, "contact", $0.id) })
+            .sorted { $0.0.localizedStandardCompare($1.0) == .orderedAscending }
         var result = AttributedString()
-        for (index, organisation) in organisations.enumerated() {
+        for (index, entry) in entries.enumerated() {
             if index > 0 { result += AttributedString(", ") }
-            var name = AttributedString(organisation.name)
-            name.link = URL(string: "wip://organisation/\(organisation.id.uuidString)")
+            var name = AttributedString(entry.0)
+            name.link = URL(string: "wip://\(entry.1)/\(entry.2.uuidString)")
             name.foregroundColor = Color.primary
             result += name
         }
@@ -420,6 +432,15 @@ struct EntityWorkspaceView: View {
         ensureSelection()
     }
 
+    private func navigateToEntity(_ focus: EntityFocus) {
+        if focus.kind == kind {
+            selectedID = focus.id
+            query = focus.name
+        } else {
+            onNavigate(focus)
+        }
+    }
+
     private func relatedContacts(for organisation: Organisation) -> [Contact] {
         let mentionedIDs = Set(store.data.notes
             .filter { $0.organisationID == organisation.id }
@@ -430,13 +451,19 @@ struct EntityWorkspaceView: View {
     }
 
     private func relatedOrganisations(for contact: Contact) -> [Organisation] {
-        let ids = Set(store.data.notes.compactMap { note -> UUID? in
+        let ids = Set(visibleFeedNotes.compactMap { note -> UUID? in
             guard note.contactIDs.contains(contact.id),
                   let organisationID = note.organisationID,
                   organisationID != contact.organisationID else { return nil }
             return organisationID
         })
         return store.data.organisations.filter { ids.contains($0.id) }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private func relatedContactsInVisibleNotes(excluding contact: Contact) -> [Contact] {
+        let ids = Set(visibleFeedNotes.flatMap(\.contactIDs))
+        return store.data.contacts.filter { $0.id != contact.id && ids.contains($0.id) }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
@@ -464,7 +491,6 @@ struct EntityWorkspaceView: View {
         NSPasteboard.general.clearContents()
         if NSPasteboard.general.setString(text, forType: .string) {
             onCopy()
-            showCopiedAlert = true
         } else {
             store.errorMessage = "Could not copy the feed to the clipboard."
         }
