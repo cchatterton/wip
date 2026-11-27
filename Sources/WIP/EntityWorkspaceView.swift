@@ -61,7 +61,11 @@ struct EntityWorkspaceView: View {
     }
 
     private var filteredOrganisations: [Organisation] {
-        store.data.organisations.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+        store.data.organisations.filter { organisation in
+            query.isEmpty || ([organisation.name] + organisation.aliases).contains {
+                $0.localizedCaseInsensitiveContains(query)
+            }
+        }
     }
 
     private var filteredContacts: [Contact] {
@@ -145,11 +149,11 @@ struct EntityWorkspaceView: View {
                 LazyVStack(alignment: .leading, spacing: 3) {
                     if kind == .organisation {
                         ForEach(filteredOrganisations) { organisation in
-                            entityRow(id: organisation.id, name: organisation.name)
+                            entityRow(id: organisation.id, name: organisation.name, aliases: organisation.aliases)
                         }
                     } else {
                         ForEach(filteredContacts) { contact in
-                            entityRow(id: contact.id, name: contact.name)
+                            entityRow(id: contact.id, name: contact.name, aliases: contact.aliases)
                         }
                     }
                 }
@@ -184,18 +188,26 @@ struct EntityWorkspaceView: View {
         .padding(.bottom, 26)
     }
 
-    private func entityRow(id: UUID, name: String) -> some View {
+    private func entityRow(id: UUID, name: String, aliases: [String]) -> some View {
         Button {
             selectedID = id
         } label: {
-            Text(name)
-                .font(WIPStyle.bodyFont)
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(RoundedRectangle(cornerRadius: 8).fill(selectedID == id ? WIPStyle.selected : Color.clear))
-                .contentShape(Rectangle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
+                    .font(WIPStyle.bodyFont)
+                    .lineLimit(2)
+                if !aliases.isEmpty {
+                    Text(aliases.joined(separator: ", "))
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(selectedID == id ? WIPStyle.selected : Color.clear))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
