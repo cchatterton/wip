@@ -87,6 +87,8 @@ struct WIPRootView: View {
     @State private var entityFocus: EntityFocus?
     @State private var notesSearchRequest: NotesSearchRequest?
     @State private var showHighlightEditor = false
+    @State private var showCopyFlash = false
+    @State private var copyFlashGeneration = 0
     @AppStorage("highlightHex") private var highlightHex = WIPStyle.defaultHighlightHex
 
     var body: some View {
@@ -103,9 +105,11 @@ struct WIPRootView: View {
                 case .notes:
                     NotesView(searchRequest: notesSearchRequest)
                 case .organisations:
-                    EntityWorkspaceView(kind: .organisation, focus: entityFocus, onNavigate: navigate)
+                    EntityWorkspaceView(kind: .organisation, focus: entityFocus,
+                                        onNavigate: navigate, onCopy: flashCopyConfirmation)
                 case .contacts:
-                    EntityWorkspaceView(kind: .contact, focus: entityFocus, onNavigate: navigate)
+                    EntityWorkspaceView(kind: .contact, focus: entityFocus,
+                                        onNavigate: navigate, onCopy: flashCopyConfirmation)
                 case .tasks:
                     TasksBoardView()
                 }
@@ -116,6 +120,10 @@ struct WIPRootView: View {
                         : WIPStyle.background)
         }
         .background(WIPStyle.background)
+        .overlay {
+            Color.white.opacity(showCopyFlash ? (colorScheme == .dark ? 0.5 : 0.7) : 0)
+                .allowsHitTesting(false)
+        }
         .overlay {
             if let message = store.processingMessage {
                 ProcessingOverlay(message: message)
@@ -186,6 +194,18 @@ struct WIPRootView: View {
     private func navigate(_ focus: EntityFocus) {
         entityFocus = focus
         tab = focus.kind == .organisation ? .organisations : .contacts
+    }
+
+    private func flashCopyConfirmation() {
+        copyFlashGeneration += 1
+        let generation = copyFlashGeneration
+        showCopyFlash = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            guard generation == copyFlashGeneration else { return }
+            withAnimation(.easeOut(duration: 0.4)) {
+                showCopyFlash = false
+            }
+        }
     }
 }
 

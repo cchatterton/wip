@@ -19,6 +19,7 @@ struct EntityWorkspaceView: View {
     let kind: EntityKind
     let focus: EntityFocus?
     let onNavigate: (EntityFocus) -> Void
+    let onCopy: () -> Void
     @State private var query = ""
     @State private var feedQuery = ""
     @State private var newName = ""
@@ -294,8 +295,8 @@ struct EntityWorkspaceView: View {
     }
 
     private func metadata(label: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 15) {
-            Text(label).foregroundStyle(.secondary)
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            copyMetadataLabel(label, value: value)
             Text(value)
                 .textSelection(.enabled)
         }
@@ -304,9 +305,8 @@ struct EntityWorkspaceView: View {
     }
 
     private func relatedContactsMetadata(_ contacts: [Contact]) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 15) {
-            Text("Related")
-                .foregroundStyle(.secondary)
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            copyMetadataLabel("Related", value: contacts.map(\.name).joined(separator: ", "))
             Text(contactLinks(contacts))
                 .environment(\.openURL, OpenURLAction { url in
                     guard url.scheme == "wip", url.host == "contact",
@@ -335,8 +335,8 @@ struct EntityWorkspaceView: View {
     }
 
     private func linkedOrganisationMetadata(_ organisation: Organisation) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 15) {
-            Text("Organisation").foregroundStyle(.secondary)
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            copyMetadataLabel("Organisation", value: organisation.name)
             Button {
                 onNavigate(EntityFocus(kind: .organisation, id: organisation.id, name: organisation.name))
             } label: {
@@ -349,8 +349,8 @@ struct EntityWorkspaceView: View {
     }
 
     private func relatedOrganisationsMetadata(_ organisations: [Organisation]) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 15) {
-            Text("Related").foregroundStyle(.secondary)
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            copyMetadataLabel("Related", value: organisations.map(\.name).joined(separator: ", "))
             Text(organisationLinks(organisations))
                 .environment(\.openURL, OpenURLAction { url in
                     guard url.scheme == "wip", url.host == "organisation",
@@ -376,6 +376,25 @@ struct EntityWorkspaceView: View {
             result += name
         }
         return result
+    }
+
+    private func copyMetadataLabel(_ label: String, value: String) -> some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            if NSPasteboard.general.setString(value, forType: .string) {
+                onCopy()
+            } else {
+                store.errorMessage = "Could not copy \(label.lowercased()) to the clipboard."
+            }
+        } label: {
+            Text(label)
+                .foregroundStyle(.secondary)
+                .frame(width: 94, alignment: .trailing)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Copy \(label.lowercased())")
+        .accessibilityLabel("Copy \(label)")
     }
 
     private func applyFocus() {
@@ -432,6 +451,7 @@ struct EntityWorkspaceView: View {
         let text = ([title].compactMap { $0 } + entries).joined(separator: "\n\n")
         NSPasteboard.general.clearContents()
         if NSPasteboard.general.setString(text, forType: .string) {
+            onCopy()
             showCopiedAlert = true
         } else {
             store.errorMessage = "Could not copy the feed to the clipboard."
